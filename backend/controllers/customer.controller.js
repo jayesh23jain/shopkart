@@ -78,7 +78,7 @@ const loginCustomer = async(req,res)=>{
             message: "Login successful",
             customer: {
                 _id: user._id,
-                fullName: user.fullName,
+                fullName: user.name || user.fullName,
                 email: user.email,
                 phone: user.phone
             }

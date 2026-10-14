@@ -1,1 +1,206 @@
 @import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@keyframes floatJacket {
+  0%, 100% {
+    transform: translateY(-8px) scale(1);
+  }
+  50% {
+    transform: translateY(8px) scale(1.015);
+  }
+}
+
+@keyframes floatShadow {
+  0%, 100% {
+    transform: scale(0.92);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.7;
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-float-jacket {
+  animation: floatJacket 4.5s ease-in-out infinite;
+}
+
+.animate-float-shadow {
+  animation: floatShadow 4.5s ease-in-out infinite;
+}
+
+@keyframes scaleUp {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-scale-up {
+  animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 6s ease-in-out infinite;
+}
+
+.glass-pill {
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.glass-card {
+  background: rgba(22, 22, 26, 0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0d0c0d;
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Diagonal jacket transitions matching record.mp4 */
+@keyframes jacketExitToTopLeft {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+    filter: blur(0px);
+  }
+  100% {
+    transform: translate3d(clamp(-440px, -32vw, -260px), clamp(-260px, -22vh, -160px), 0) scale(0.26);
+    opacity: 0;
+    filter: blur(14px);
+  }
+}
+
+@keyframes jacketEnterFromBottomRight {
+  0% {
+    transform: translate3d(clamp(260px, 32vw, 440px), clamp(160px, 22vh, 260px), 0) scale(0.26);
+    opacity: 1;
+    filter: blur(0px);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+    filter: blur(0px);
+  }
+}
+
+@keyframes jacketExitToBottomRight {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+    filter: blur(0px);
+  }
+  100% {
+    transform: translate3d(clamp(260px, 32vw, 440px), clamp(160px, 22vh, 260px), 0) scale(0.26);
+    opacity: 0;
+    filter: blur(14px);
+  }
+}
+
+@keyframes jacketEnterFromTopLeft {
+  0% {
+    transform: translate3d(clamp(-440px, -32vw, -260px), clamp(-260px, -22vh, -160px), 0) scale(0.26);
+    opacity: 0;
+    filter: blur(12px);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+    filter: blur(0px);
+  }
+}
+
+@keyframes previewFadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) translate(15px, 15px);
+  }
+  60% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translate(0, 0);
+  }
+}
+
+.animate-jacket-exit-topleft {
+  animation: jacketExitToTopLeft 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.animate-jacket-enter-bottomright {
+  animation: jacketEnterFromBottomRight 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.animate-jacket-exit-bottomright {
+  animation: jacketExitToBottomRight 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.animate-jacket-enter-topleft {
+  animation: jacketEnterFromTopLeft 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.animate-preview-in {
+  animation: previewFadeIn 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}

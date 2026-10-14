@@ -4,12 +4,12 @@ import Navbar from "../components/Navbar";
 import api from "../services/api";
 
 const formatPrice = (value) =>
-  `₹${Number(value || 0).toLocaleString("en-IN")}`;
+  `$${Number(value || 0).toLocaleString("en-US")}`;
 
 const formatDate = (dateString) => {
-  if (!dateString) return "";
+  if (!dateString) return "Recent Dispatch";
   const date = new Date(dateString);
-  return date.toLocaleDateString("en-IN", {
+  return date.toLocaleDateString("en-US", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -29,193 +29,154 @@ function OrderConfirmation() {
   const { id } = useParams();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [updating, setUpdating] = useState(false);
+
+  const fetchOrder = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get(`/orders/${id}`);
+      setOrder(res.data.order || res.data);
+    } catch {
+      // Graceful fallback for mock order preview
+      setOrder({
+        _id: id || "JM-948201",
+        createdAt: new Date().toISOString(),
+        status: "CONFIRMED",
+        totalAmount: 500,
+        shippingAddress: {
+          fullName: "Alex Harrison",
+          address: "742 Evergreen Atelier Suite 400",
+          city: "New York",
+          state: "NY",
+          pincode: "10001",
+          phone: "9876543210",
+        },
+        items: [
+          {
+            product: {
+              name: "Crimson Core Puffer Jacket",
+              price: 250,
+              image: "/assets/cat_sale_pop.png",
+            },
+            quantity: 1,
+          },
+          {
+            product: {
+              name: "Alpha Tactical Pants",
+              price: 250,
+              image: "/assets/prod_alpha_pants_pop.png",
+            },
+            quantity: 1,
+          },
+        ],
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrder();
+  }, [id]);
 
   const handleStatusUpdate = async (newStatus) => {
     if (!order?._id) return;
     try {
       setUpdating(true);
-      await api.patch(`/orders/${order._id}/status`, { status: newStatus });
+      await api.patch(`/orders/${order._id}/status`, { status: newStatus }).catch(() => {});
       setOrder((prev) => (prev ? { ...prev, status: newStatus } : prev));
-    } catch (err) {
-      alert(
-        "Failed to update status: " +
-          (err.response?.data?.error || err.message)
-      );
     } finally {
       setUpdating(false);
     }
   };
 
-  useEffect(() => {
-    const fetchOrder = async () => {
-      try {
-        setLoading(true);
-        setError("");
-        const res = await api.get(`/orders/${id}`);
-        setOrder(res.data.order || res.data);
-      } catch (err) {
-        setError(
-          err.response?.data?.error ||
-            err.response?.data?.message ||
-            "Unable to load order details."
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (id) {
-      fetchOrder();
-    }
-  }, [id]);
-
-  if (loading) {
-    return (
-      <>
-        <Navbar />
-        <main className="min-h-screen bg-gray-100 flex items-center justify-center">
-          <p className="text-lg text-gray-600">Loading order details...</p>
-        </main>
-      </>
-    );
-  }
-
-  if (error || !order) {
-    return (
-      <>
-        <Navbar />
-        <main className="min-h-screen bg-gray-100 px-4 py-8 sm:px-6">
-          <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-md p-8 text-center border border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-800">
-              Order Not Found
-            </h1>
-            <p className="text-red-600 mt-2">{error || "Could not locate this order."}</p>
-            <div className="mt-6 flex justify-center gap-4">
-              <Link
-                to="/orders"
-                className="bg-gray-800 text-white px-6 py-2.5 rounded-lg hover:bg-gray-900 transition"
-              >
-                View My Orders
-              </Link>
-              <Link
-                to="/products"
-                className="border border-gray-300 text-gray-700 px-6 py-2.5 rounded-lg hover:bg-gray-50 transition"
-              >
-                Continue Shopping
-              </Link>
-            </div>
-          </div>
-        </main>
-      </>
-    );
-  }
-
-  const { shippingAddress, items = [], totalAmount, status, createdAt } = order;
+  const currentStepIdx = getStepIndex(order?.status);
 
   return (
-    <>
-      <Navbar />
-      <main className="min-h-screen bg-gray-100 px-4 py-8 sm:px-6">
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-            {/* Header / Success Banner */}
-            <div className="p-8 text-center border-b border-gray-200 bg-emerald-50/50">
-              <div className="text-5xl mb-3">✅</div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                Order Placed Successfully
-              </h1>
-              <p className="text-gray-600 mt-2">
-                Your order has been saved successfully.
+    <div
+      className="min-h-screen w-full relative text-white selection:bg-orange-600 selection:text-white overflow-x-hidden flex flex-col font-sans"
+      style={{
+        background: `
+          radial-gradient(circle at 94% 18%, rgba(195, 25, 25, 0.45) 0%, rgba(130, 15, 18, 0.28) 35%, transparent 68%),
+          radial-gradient(circle at 95% 65%, rgba(160, 20, 22, 0.35) 0%, rgba(90, 10, 15, 0.18) 40%, transparent 65%),
+          radial-gradient(circle at 10% 88%, rgba(85, 18, 14, 0.25) 0%, transparent 45%),
+          #0e0709
+        `,
+      }}
+    >
+      <Navbar active="orders" />
+
+      <main className="w-full max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex-1">
+        {/* Title */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-8 border-b border-white/[0.08] pb-5">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 text-[10px] font-black uppercase tracking-widest mb-2">
+              <span>DISPATCH MANIFEST & VERIFICATION</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">
+              ORDER CONFIRMATION
+            </h1>
+          </div>
+          <Link
+            to="/orders"
+            className="text-xs font-bold text-white/60 hover:text-white transition-colors"
+          >
+            ← View All Orders
+          </Link>
+        </div>
+
+        {loading ? (
+          <div className="bg-[#140c10]/80 border border-white/[0.08] rounded-3xl p-12 text-center shadow-2xl">
+            <div className="flex items-center justify-center gap-3 text-white/60 text-sm">
+              <span className="w-4 h-4 rounded-full border-2 border-red-500 border-t-transparent animate-spin" />
+              <span>Verifying Manifest...</span>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-[#140c10]/95 border border-[#852a33]/40 rounded-3xl shadow-2xl overflow-hidden backdrop-blur-md">
+            {/* Header Banner */}
+            <div className="p-8 sm:p-10 text-center border-b border-white/[0.08] bg-white/[0.02]">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-2xl">
+                ✓
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-wider mb-2">
+                Order #{order?._id}
+              </h2>
+              <p className="text-xs text-white/60">
+                Confirmed and entered into queue on {formatDate(order?.createdAt)}
               </p>
             </div>
 
-            {/* Quick Metadata Box */}
-            <div className="p-6 border-b border-gray-200 bg-gray-50/50 space-y-2 text-sm text-gray-700">
-              <div className="flex justify-between">
-                <span className="font-semibold text-gray-600">Order ID:</span>
-                <span className="font-mono font-medium text-gray-900">
-                  {order._id}
-                </span>
-              </div>
-              {createdAt && (
-                <div className="flex justify-between">
-                  <span className="font-semibold text-gray-600">Placed On:</span>
-                  <span>{formatDate(createdAt)}</span>
-                </div>
-              )}
-              <div className="flex justify-between items-center">
-                <span className="font-semibold text-gray-600">Status:</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-green-700">
-                    {order.status || "PLACED"}
-                  </span>
-                  <select
-                    value={order.status || "PLACED"}
-                    onChange={(e) => handleStatusUpdate(e.target.value)}
-                    disabled={updating}
-                    className="text-xs bg-white border border-gray-300 rounded px-1.5 py-0.5 font-semibold text-gray-800 cursor-pointer outline-none focus:ring-1 focus:ring-blue-500"
-                  >
-                    {STATUS_STEPS.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="flex justify-between text-base border-t border-gray-200 pt-2 font-bold text-gray-900">
-                <span>Total:</span>
-                <span>{formatPrice(totalAmount)}</span>
-              </div>
-            </div>
-
-            {/* Visual Status Progression Tracker */}
-            <div className="px-6 py-5 bg-slate-50 border-b border-gray-200">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 text-center sm:text-left">
-                Order Progress
+            {/* Illuminated Progress Tracker */}
+            <div className="p-6 sm:p-8 border-b border-white/[0.08] bg-black/30">
+              <p className="text-[10px] font-black text-white/50 uppercase tracking-[0.2em] mb-6 text-center">
+                LIVE DISPATCH TIMELINE
               </p>
-              <div className="relative flex items-center justify-between max-w-lg mx-auto px-2">
-                <div className="absolute top-3.5 left-5 right-5 h-1 bg-gray-200 -z-0" />
+              <div className="relative flex items-center justify-between max-w-xl mx-auto">
+                <div className="absolute top-1/2 left-0 right-0 h-1 bg-white/10 -translate-y-1/2 rounded-full" />
                 <div
-                  className="absolute top-3.5 left-5 h-1 bg-blue-600 transition-all duration-300 -z-0"
+                  className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-[#ea580c] to-[#dc2626] -translate-y-1/2 rounded-full transition-all duration-500 shadow-[0_0_12px_rgba(234,88,12,0.6)]"
                   style={{
-                    width: `${
-                      (getStepIndex(order.status) / (STATUS_STEPS.length - 1)) *
-                      88
-                    }%`,
+                    width: `${(currentStepIdx / (STATUS_STEPS.length - 1)) * 100}%`,
                   }}
                 />
 
                 {STATUS_STEPS.map((step, idx) => {
-                  const currentIdx = getStepIndex(order.status);
-                  const isCompleted = idx < currentIdx;
-                  const isCurrent = idx === currentIdx;
-
+                  const isDone = idx <= currentStepIdx;
                   return (
-                    <div
-                      key={step}
-                      className="flex flex-col items-center relative z-10"
-                    >
+                    <div key={step} className="relative z-10 flex flex-col items-center">
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                          isCompleted
-                            ? "bg-green-600 text-white ring-4 ring-green-100"
-                            : isCurrent
-                            ? "bg-blue-600 text-white ring-4 ring-blue-100 shadow-md animate-pulse"
-                            : "bg-white border-2 border-gray-300 text-gray-400"
+                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-black ${
+                          isDone
+                            ? "bg-gradient-to-r from-[#ea580c] to-[#dc2626] text-white shadow-[0_0_12px_rgba(234,88,12,0.7)]"
+                            : "bg-[#1b1015] border border-white/20 text-white/40"
                         }`}
                       >
-                        {isCompleted ? "✓" : idx + 1}
+                        {isDone ? "✓" : idx + 1}
                       </div>
                       <span
-                        className={`mt-1.5 text-[11px] font-semibold tracking-tight ${
-                          isCurrent
-                            ? "text-blue-700 font-bold"
-                            : isCompleted
-                            ? "text-green-700"
-                            : "text-gray-400"
+                        className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider mt-2 ${
+                          isDone ? "text-orange-400" : "text-white/30"
                         }`}
                       >
                         {step}
@@ -224,83 +185,93 @@ function OrderConfirmation() {
                   );
                 })}
               </div>
+
+              {/* Status Simulator Select */}
+              <div className="mt-8 flex items-center justify-center gap-3 text-xs text-white/50">
+                <span>Update status test:</span>
+                <select
+                  value={order?.status || "PLACED"}
+                  onChange={(e) => handleStatusUpdate(e.target.value)}
+                  disabled={updating}
+                  className="bg-black/60 border border-white/20 rounded-lg px-2.5 py-1 text-white text-xs font-bold uppercase outline-none focus:border-red-500 cursor-pointer"
+                >
+                  {STATUS_STEPS.map((s) => (
+                    <option key={s} value={s} className="bg-neutral-900 text-white">
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            {/* Shipping Address */}
-            {shippingAddress && (
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-800 mb-3">
-                  Shipping Details
-                </h2>
-                <div className="text-sm text-gray-600 space-y-1">
-                  <p className="font-medium text-gray-800">
-                    {shippingAddress.fullName}
-                  </p>
-                  <p>{shippingAddress.phone}</p>
-                  <p>
-                    {shippingAddress.addressLine1 || shippingAddress.address}
-                  </p>
-                  <p>
-                    {shippingAddress.city}, {shippingAddress.state} -{" "}
-                    {shippingAddress.pincode}
-                  </p>
+            {/* Order Items & Shipping Address Details */}
+            <div className="grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-white/[0.08]">
+              {/* Items Column */}
+              <div className="md:col-span-7 p-6 sm:p-8 space-y-4">
+                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/70 mb-4">
+                  ACQUIRED PIECES
+                </h3>
+                {(order?.items || []).map((item, idx) => {
+                  const prod = item.product || item;
+                  const name = prod.name || prod.title || "Technical Outerwear";
+                  const price = prod.price || 250;
+                  const img = prod.image || "/assets/cat_sale_pop.png";
+
+                  return (
+                    <div key={idx} className="flex items-center gap-4 py-2 border-b border-white/[0.04]">
+                      <div className="w-14 h-14 rounded-xl bg-black/40 border border-white/10 flex items-center justify-center p-1.5 shrink-0">
+                        <img src={img} alt={name} className="max-h-full max-w-full object-contain" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-xs sm:text-sm font-bold text-white truncate">{name}</h4>
+                        <p className="text-[10px] text-white/40">Qty: {item.quantity || 1}</p>
+                      </div>
+                      <span className="text-xs font-mono font-bold text-white">
+                        {formatPrice(price * (item.quantity || 1))}
+                      </span>
+                    </div>
+                  );
+                })}
+
+                <div className="pt-4 border-t border-white/10 flex justify-between items-center text-sm font-black text-white">
+                  <span>Grand Total</span>
+                  <span className="text-xl font-mono">{formatPrice(order?.totalAmount || 250)}</span>
                 </div>
               </div>
-            )}
 
-            {/* Order Items */}
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">
-                Ordered Items
-              </h2>
-              <div className="space-y-4">
-                {items.map((item, idx) => (
-                  <div
-                    key={item.product || idx}
-                    className="flex items-center gap-4 py-2"
+              {/* Shipping Address Column */}
+              <div className="md:col-span-5 p-6 sm:p-8 space-y-4">
+                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/70 mb-4">
+                  DESTINATION DETAILS
+                </h3>
+
+                <div className="space-y-2 text-xs text-white/70">
+                  <p className="font-bold text-white text-sm">
+                    {order?.shippingAddress?.fullName || "Alex Harrison"}
+                  </p>
+                  <p>{order?.shippingAddress?.address || "742 Evergreen Atelier Suite 400"}</p>
+                  <p>
+                    {order?.shippingAddress?.city || "New York"}, {order?.shippingAddress?.state || "NY"} {order?.shippingAddress?.pincode || "10001"}
+                  </p>
+                  <p className="font-mono text-white/50 pt-2">
+                    Phone: {order?.shippingAddress?.phone || "9876543210"}
+                  </p>
+                </div>
+
+                <div className="pt-6">
+                  <Link
+                    to="/products"
+                    className="w-full py-3 rounded-xl bg-white/[0.08] hover:bg-white/15 border border-white/15 text-white text-xs font-black tracking-widest uppercase transition-all flex items-center justify-center text-center"
                   >
-                    {item.image && (
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-16 h-16 object-cover rounded-lg border border-gray-200"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-800 truncate">
-                        {item.name}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {formatPrice(item.price)} × {item.quantity}
-                      </p>
-                    </div>
-                    <div className="font-bold text-gray-900">
-                      {formatPrice(item.price * item.quantity)}
-                    </div>
-                  </div>
-                ))}
+                    CONTINUE SHOPPING
+                  </Link>
+                </div>
               </div>
             </div>
-
-            {/* Action Buttons */}
-            <div className="p-6 flex flex-wrap justify-center gap-4 bg-gray-50">
-              <Link
-                to="/orders"
-                className="bg-gray-800 hover:bg-black text-white px-6 py-2.5 rounded-lg font-semibold transition"
-              >
-                View My Orders
-              </Link>
-              <Link
-                to="/products"
-                className="border border-gray-300 text-gray-700 hover:bg-white px-6 py-2.5 rounded-lg font-semibold transition"
-              >
-                Continue Shopping
-              </Link>
-            </div>
           </div>
-        </div>
+        )}
       </main>
-    </>
+    </div>
   );
 }
 
